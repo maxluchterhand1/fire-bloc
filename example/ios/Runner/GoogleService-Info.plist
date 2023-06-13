@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>885976897768-fu0valpa41dqn5rh2a59v8n39nhog6bk.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.885976897768-fu0valpa41dqn5rh2a59v8n39nhog6bk</string>
+	<key>API_KEY</key>
+	<string>AIzaSyArhkiuepeAuWVtTXUuLyI88sbDURWCJOk</string>
+	<key>GCM_SENDER_ID</key>
+	<string>885976897768</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.example.hydratedBlocFirebaseStorageExample</string>
+	<key>PROJECT_ID</key>
+	<string>hydrated-storage-example</string>
+	<key>STORAGE_BUCKET</key>
+	<string>hydrated-storage-example.appspot.com</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:885976897768:ios:55458314a4d7f485e4d15d</string>
+</dict>
+</plist>
