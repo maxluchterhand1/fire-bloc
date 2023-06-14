@@ -1,9 +1,9 @@
+import 'package:evaporated_storage_example/login/presentation/login_page.dart';
+import 'package:evaporated_storage_example/navigation/presentation/home_page.dart';
+import 'package:evaporated_storage_example/navigation/state/login_navigation_cubit.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:evaporated_storage_example/counter/presentation/counter_page.dart';
-import 'package:evaporated_storage_example/login/presentation/login_page.dart';
-import 'package:evaporated_storage_example/navigation/state/login_navigation_cubit.dart';
 
 class LoginNavigation extends StatelessWidget {
   const LoginNavigation({super.key});
@@ -15,7 +15,7 @@ class LoginNavigation extends StatelessWidget {
       child: BlocBuilder<LoginNavigationCubit, LoginNavigationState>(
         builder: (context, state) => switch (state) {
           LoginNavigationStateLoggedIn() => Navigator(
-              pages: const [MaterialPage(child: CounterPage())],
+              pages: const [MaterialPage(child: HomePage())],
               onPopPage: (_, __) => false,
             ),
           LoginNavigationStateLoggedOut() => Navigator(

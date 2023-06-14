@@ -16,7 +16,7 @@ class FireStateLoading<T> implements FireState<T> {}
 abstract class FireBloc<Event, State> extends Bloc<Event, FireState<State>>
     with FireMixin<State> {
   FireBloc(super.state) {
-    incinerate();
+    _incinerate();
   }
 
   static EvaporatedStorage? _storage;
@@ -32,8 +32,10 @@ abstract class FireBloc<Event, State> extends Bloc<Event, FireState<State>>
 abstract class FireCubit<State> extends Cubit<FireState<State>>
     with FireMixin<State> {
   FireCubit(super.state) {
-    incinerate();
+    _incinerate();
   }
+
+  void fire(State state) => emit(FireStateLoaded(state));
 }
 
 mixin FireMixin<State> on BlocBase<FireState<State>> {
@@ -43,18 +45,19 @@ mixin FireMixin<State> on BlocBase<FireState<State>> {
 
   Map<String, dynamic>? _stateJson;
 
-  Future<void> incinerate() async {
+  Future<void> _incinerate() async {
     final storage = FireBloc.storage;
-    _stateJson = await storage.read(storageToken);
+    try {
+      _stateJson = await storage.read(storageToken);
+    } catch (error, stackTrace) {
+      onError(error, stackTrace);
+    }
     _incinerated = true;
     emit(state);
-
     try {
       final stateJson = _toJson(state);
       if (stateJson != null) {
-        await storage
-            .write(storageToken, stateJson)
-            .then((_) {}, onError: onError);
+        await storage.write(storageToken, stateJson);
       }
     } catch (error, stackTrace) {
       onError(error, stackTrace);
