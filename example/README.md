@@ -1,4 +1,4 @@
-# hydrated_bloc_firebase_storage_example
+# evaporated_storage_example
 
 A new Flutter project.
 

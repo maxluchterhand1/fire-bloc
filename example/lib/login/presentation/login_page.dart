@@ -1,6 +1,6 @@
 import 'package:firebase_ui_oauth_google/firebase_ui_oauth_google.dart';
 import 'package:flutter/material.dart';
-import 'package:hydrated_bloc_firebase_storage_example/login/domain/constants.dart';
+import 'package:evaporated_storage_example/login/domain/constants.dart';
 
 class LoginPage extends StatelessWidget {
   const LoginPage({super.key});

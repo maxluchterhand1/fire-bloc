@@ -51,7 +51,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyDnt6tAxJ9mVfTDxLg0U5306DwKTcQk5Go',
-    appId: '1:885976897768:android:3b657d342c14648ee4d15d',
+    appId: '1:885976897768:android:71582b48419de876e4d15d',
     messagingSenderId: '885976897768',
     projectId: 'hydrated-storage-example',
     storageBucket: 'hydrated-storage-example.appspot.com',
@@ -59,10 +59,11 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyArhkiuepeAuWVtTXUuLyI88sbDURWCJOk',
-    appId: '1:885976897768:ios:55458314a4d7f485e4d15d',
+    appId: '1:885976897768:ios:ccf4d94f15a776f5e4d15d',
     messagingSenderId: '885976897768',
     projectId: 'hydrated-storage-example',
     storageBucket: 'hydrated-storage-example.appspot.com',
+    androidClientId: '885976897768-46e87d3uiuh2dtju8nvk6t6io1ca9j3d.apps.googleusercontent.com',
     iosClientId: '885976897768-fu0valpa41dqn5rh2a59v8n39nhog6bk.apps.googleusercontent.com',
     iosBundleId: 'com.example.hydratedBlocFirebaseStorageExample',
   );

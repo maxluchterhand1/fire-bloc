@@ -1,4 +1,4 @@
-import 'package:hydrated_bloc_firebase_storage/hydrated_bloc_firebase_storage.dart';
+import 'package:evaporated_storage/evaporated_storage.dart';
 import 'package:test/test.dart';
 
 void main() {

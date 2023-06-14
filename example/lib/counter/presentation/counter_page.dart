@@ -1,7 +1,8 @@
+import 'package:evaporated_storage/fire_bloc/domain/fire_bloc.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:hydrated_bloc_firebase_storage_example/counter/state/counter_cubit.dart';
+import 'package:evaporated_storage_example/counter/state/counter_cubit.dart';
 
 class CounterPage extends StatefulWidget {
   const CounterPage({super.key});
@@ -29,10 +30,15 @@ class _CounterPageState extends State<CounterPage> {
                     Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(
-                          'Count: ${context.select<CounterCubit, int>(
-                            (bloc) => bloc.state,
-                          )}',
+                        BlocBuilder<CounterCubit, FireState<int>>(
+                          builder: (context, state) {
+                            switch (state) {
+                              case FireStateLoaded(value: final value):
+                                return Text('Count: $value');
+                              case FireStateLoading():
+                                return const CircularProgressIndicator();
+                            }
+                          },
                         ),
                         const SizedBox(height: 16),
                         ElevatedButton(

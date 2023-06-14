@@ -1,7 +1,22 @@
-import 'package:bloc/bloc.dart';
+import 'package:evaporated_storage/fire_bloc/domain/fire_bloc.dart';
 
-class CounterCubit extends Cubit<int> {
-  CounterCubit() : super(0);
+class CounterCubit extends FireCubit<int> {
+  CounterCubit() : super(FireStateLoaded(0));
 
-  void increment() => emit(state + 1);
+  void increment() {
+    switch (state) {
+      case FireStateLoaded(value: final value):
+        emit(FireStateLoaded(value + 1));
+      case FireStateLoading():
+    }
+  }
+
+  @override
+  int? fromJson(Map<String, dynamic> json) => switch (json['value']) {
+        final int value => value,
+        _ => null,
+      };
+
+  @override
+  Map<String, dynamic>? toJson(int state) => {'value': state};
 }
