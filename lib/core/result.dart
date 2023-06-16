@@ -1,11 +1,15 @@
-sealed class Option<T> {}
+sealed class Result<T, E> {}
 
-class Some<T> implements Option<T> {
-  const Some(this.value);
+class Success<T, E> implements Result<T, E> {
+  const Success(this.value);
 
   final T value;
+
+  static Success<void, E> empty<E>() => Success<void, E>(null);
 }
 
-class None<T> implements Option<T> {
-  const None();
+class Failure<T, E> implements Result<T, E> {
+  const Failure([this.value]);
+
+  final E? value;
 }

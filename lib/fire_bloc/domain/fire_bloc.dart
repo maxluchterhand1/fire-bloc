@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:bloc/bloc.dart';
+import 'package:evaporated_storage/core/option.dart';
+import 'package:evaporated_storage/core/result.dart';
 import 'package:evaporated_storage/evaporated_storage/domain/evaporated_storage.dart';
 
 part 'fire_emitter_adapter.dart';
@@ -63,11 +65,17 @@ mixin FireMixin<State> on BlocBase<FireState<State>> {
 
   Future<void> _incinerate() async {
     final storage = FireBloc.storage;
-    try {
-      _stateJson = await storage.read(storageToken);
-    } catch (error, stackTrace) {
-      onError(error, stackTrace);
+    switch (await storage.read(storageToken)) {
+      case Failure():
+        onError(Object(), StackTrace.current); // TODO
+      case Success(value: final value):
+        switch (value) {
+          case Some(value: final json):
+            _stateJson = json;
+          case None():
+        }
     }
+
     _incinerated = true;
     emit(state);
     try {
