@@ -3,6 +3,13 @@ import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:evaporated_storage/evaporated_storage/domain/evaporated_storage.dart';
 
+part 'fire_emitter_adapter.dart';
+
+typedef FireEventHandler<Event, State> = FutureOr<void> Function(
+  Event event,
+  Emitter<State> fireEmit,
+);
+
 sealed class FireState<T> {}
 
 class FireStateLoaded<T> implements FireState<T> {
@@ -27,6 +34,15 @@ abstract class FireBloc<Event, State> extends Bloc<Event, FireState<State>>
     if (_storage == null) throw const StorageNotFound();
     return _storage!;
   }
+
+  void fireOn<E extends Event>(
+    FireEventHandler<E, State> handler, {
+    EventTransformer<E>? transformer,
+  }) =>
+      on(
+        (event, emit) => handler(event, _FireEmitterAdapter(emit)),
+        transformer: transformer,
+      );
 }
 
 abstract class FireCubit<State> extends Cubit<FireState<State>>
@@ -35,7 +51,7 @@ abstract class FireCubit<State> extends Cubit<FireState<State>>
     _incinerate();
   }
 
-  void fire(State state) => emit(FireStateLoaded(state));
+  void fireEmit(State state) => emit(FireStateLoaded(state));
 }
 
 mixin FireMixin<State> on BlocBase<FireState<State>> {

@@ -6,7 +6,7 @@ class CounterCubit extends FireCubit<int> {
   void increment() {
     switch (state) {
       case FireStateLoaded(value: final value):
-        fire(value + 1);
+        fireEmit(value + 1);
       case FireStateLoading():
     }
   }

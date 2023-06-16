@@ -8,16 +8,16 @@ part 'form_state.dart';
 
 class FormBloc extends FireBloc<FormEvent, FormBlocState> {
   FormBloc() : super(FireStateLoaded(FormBlocState.empty)) {
-    on<FormEvent>((event, emit) {
+    fireOn<FormEvent>((event, fireEmit) {
       switch (state) {
         case FireStateLoaded(value: final innerState):
           switch (event) {
             case FormEventSetName(value: final value):
-              emit(FireStateLoaded(innerState.copyWith(name: value)));
+              fireEmit(innerState.copyWith(name: value));
             case FormEventSetDateOfBirth(value: final value):
-              emit(FireStateLoaded(innerState.copyWith(dateOfBirth: value)));
+              fireEmit(innerState.copyWith(dateOfBirth: value));
             case FormEventSetCool(value: final value):
-              emit(FireStateLoaded(innerState.copyWith(isCool: value)));
+              fireEmit(innerState.copyWith(isCool: value));
           }
         case FireStateLoading():
           break;
