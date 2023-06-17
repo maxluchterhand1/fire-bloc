@@ -11,6 +11,7 @@ dependencies:
   collection: ^1.17.1
   firebase_auth: ^4.6.2
   firebase_core: ^2.13.1
+  hive: ^2.2.3
   hydrated_bloc: ^9.1.1
   very_good_analysis: ^4.0.0+1
 
