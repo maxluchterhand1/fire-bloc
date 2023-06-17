@@ -19,6 +19,9 @@ final class FirestoreEvaporatedStorage implements EvaporatedStorage {
   final fs.FirebaseFirestore _firestore;
 
   @override
+  Future<void> initialize() => Future.value();
+
+  @override
   Future<Result<void, void>> clear() async {
     try {
       switch (_userCollectionRef) {
@@ -27,6 +30,7 @@ final class FirestoreEvaporatedStorage implements EvaporatedStorage {
           final deletions = snapshot.docs.map((e) => ref.doc(e.id).delete());
           await Future.wait(deletions);
         case None():
+          break;
       }
       return Success.empty();
     } catch (_) {
@@ -47,6 +51,7 @@ final class FirestoreEvaporatedStorage implements EvaporatedStorage {
         case Some(value: final ref):
           await ref.doc(key).delete();
         case None():
+          break;
       }
       return Success.empty();
     } catch (_) {
@@ -87,6 +92,21 @@ final class FirestoreEvaporatedStorage implements EvaporatedStorage {
     try {
       await userCollectionRef.doc(key).set(value);
       return Success.empty();
+    } catch (_) {
+      return const Failure();
+    }
+  }
+
+  @override
+  Future<Result<List<String>, void>> keys() async {
+    try {
+      switch (_userCollectionRef) {
+        case Some(value: final ref):
+          final snapshot = await ref.get();
+          return Success(snapshot.docs.map((e) => e.id).toList());
+        case None():
+          return const Success([]);
+      }
     } catch (_) {
       return const Failure();
     }

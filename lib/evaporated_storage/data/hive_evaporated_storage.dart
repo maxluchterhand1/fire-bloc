@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:evaporated_storage/core/option.dart';
 import 'package:evaporated_storage/core/result.dart';
 import 'package:evaporated_storage/evaporated_storage/domain/evaporated_storage.dart';
-import 'package:hive/hive.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
 final class HiveEvaporatedStorage implements EvaporatedStorage {
   HiveEvaporatedStorage();
@@ -11,6 +11,9 @@ final class HiveEvaporatedStorage implements EvaporatedStorage {
   static const _boxName = 'hive_evaporated_storage';
 
   final _box = Hive.box<Map<String, dynamic>>(_boxName);
+
+  @override
+  Future<void> initialize() async => Hive.initFlutter();
 
   @override
   Future<Result<void, void>> clear() async {
@@ -51,6 +54,16 @@ final class HiveEvaporatedStorage implements EvaporatedStorage {
     try {
       await _box.put(key, value);
       return Success.empty();
+    } catch (_) {
+      return const Failure();
+    }
+  }
+
+  @override
+  Future<Result<List<String>, void>> keys() async {
+    try {
+      final keys = _box.keys.toList();
+      return Success(keys.map((e) => e.toString()).toList());
     } catch (_) {
       return const Failure();
     }
