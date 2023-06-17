@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import 'package:evaporated_storage/fire_bloc/domain/fire_bloc.dart';
+import 'package:evaporated_storage/evaporated_storage.dart';
 import 'package:flutter/cupertino.dart';
 
 part 'form_event.dart';
@@ -7,10 +7,10 @@ part 'form_event.dart';
 part 'form_state.dart';
 
 class FormBloc extends FireBloc<FormEvent, FormBlocState> {
-  FormBloc() : super(FireStateLoaded(FormBlocState.empty)) {
+  FormBloc() : super(Some(FormBlocState.empty)) {
     fireOn<FormEvent>((event, fireEmit) {
       switch (state) {
-        case FireStateLoaded(value: final innerState):
+        case Some(value: final innerState):
           switch (event) {
             case FormEventSetName(value: final value):
               fireEmit(innerState.copyWith(name: value));
@@ -19,7 +19,7 @@ class FormBloc extends FireBloc<FormEvent, FormBlocState> {
             case FormEventSetCool(value: final value):
               fireEmit(innerState.copyWith(isCool: value));
           }
-        case FireStateLoading():
+        case None():
           break;
       }
     });

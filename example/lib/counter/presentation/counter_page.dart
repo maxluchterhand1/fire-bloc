@@ -1,4 +1,4 @@
-import 'package:evaporated_storage/fire_bloc/domain/fire_bloc.dart';
+import 'package:evaporated_storage/evaporated_storage.dart';
 import 'package:evaporated_storage_example/counter/state/counter_cubit.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -30,12 +30,12 @@ class _CounterPageState extends State<CounterPage> {
                     Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        BlocBuilder<CounterCubit, FireState<int>>(
+                        BlocBuilder<CounterCubit, Option<int>>(
                           builder: (context, state) {
                             switch (state) {
-                              case FireStateLoaded(value: final value):
+                              case Some(value: final value):
                                 return Text('Count: $value');
-                              case FireStateLoading():
+                              case None():
                                 return const CircularProgressIndicator();
                             }
                           },

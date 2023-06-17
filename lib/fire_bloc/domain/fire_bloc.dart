@@ -12,17 +12,7 @@ typedef FireEventHandler<Event, State> = FutureOr<void> Function(
   Emitter<State> fireEmit,
 );
 
-sealed class FireState<T> {}
-
-class FireStateLoaded<T> implements FireState<T> {
-  FireStateLoaded(this.value);
-
-  final T value;
-}
-
-class FireStateLoading<T> implements FireState<T> {}
-
-abstract class FireBloc<Event, State> extends Bloc<Event, FireState<State>>
+abstract class FireBloc<Event, State> extends Bloc<Event, Option<State>>
     with FireMixin<State> {
   FireBloc(super.state) {
     _incinerate();
@@ -47,19 +37,19 @@ abstract class FireBloc<Event, State> extends Bloc<Event, FireState<State>>
       );
 }
 
-abstract class FireCubit<State> extends Cubit<FireState<State>>
+abstract class FireCubit<State> extends Cubit<Option<State>>
     with FireMixin<State> {
   FireCubit(super.state) {
     _incinerate();
   }
 
-  void fireEmit(State state) => emit(FireStateLoaded(state));
+  void fireEmit(State state) => emit(Some(state));
 }
 
-mixin FireMixin<State> on BlocBase<FireState<State>> {
+mixin FireMixin<State> on BlocBase<Option<State>> {
   bool _incinerated = false;
 
-  FireState<State>? _state;
+  Option<State>? _state;
 
   Map<String, dynamic>? _stateJson;
 
@@ -90,8 +80,8 @@ mixin FireMixin<State> on BlocBase<FireState<State>> {
   }
 
   @override
-  FireState<State> get state {
-    if (!_incinerated) return FireStateLoading<State>();
+  Option<State> get state {
+    if (!_incinerated) return const None();
 
     if (_state != null) return _state!;
     try {
@@ -114,7 +104,7 @@ mixin FireMixin<State> on BlocBase<FireState<State>> {
   }
 
   @override
-  void onChange(Change<FireState<State>> change) {
+  void onChange(Change<Option<State>> change) {
     super.onChange(change);
     final storage = FireBloc.storage;
     final state = change.nextState;
@@ -130,20 +120,20 @@ mixin FireMixin<State> on BlocBase<FireState<State>> {
     _state = state;
   }
 
-  FireStateLoaded<State>? _fromJson(dynamic json) {
+  Option<State>? _fromJson(dynamic json) {
     final dynamic traversedJson = _traverseRead(json);
     final castJson = _cast<Map<String, dynamic>>(traversedJson);
     final innerState = fromJson(castJson ?? <String, dynamic>{});
-    return innerState == null ? null : FireStateLoaded(innerState);
+    return innerState == null ? null : Some(innerState);
   }
 
-  Map<String, dynamic>? _toJson(FireState<State> state) {
+  Map<String, dynamic>? _toJson(Option<State> state) {
     switch (state) {
-      case FireStateLoaded():
+      case Some(value: final value):
         return _cast<Map<String, dynamic>>(
-          _traverseWrite(toJson(state.value)).value,
+          _traverseWrite(toJson(value)).value,
         );
-      case FireStateLoading():
+      case None():
         return null;
     }
   }

@@ -1,3 +1,4 @@
+import 'package:evaporated_storage/evaporated_storage.dart';
 import 'package:evaporated_storage/fire_bloc/domain/fire_bloc.dart';
 import 'package:evaporated_storage_example/form/state/form_bloc.dart';
 import 'package:flutter/material.dart';
@@ -26,20 +27,18 @@ class _FormPageState extends State<FormPage> {
   Widget build(BuildContext context) {
     return BlocProvider.value(
       value: _formBloc,
-      child: BlocConsumer<FormBloc, FireState<FormBlocState>>(
-        listenWhen: (previous, next) =>
-            previous is FireStateLoading && next is FireStateLoaded,
+      child: BlocConsumer<FormBloc, Option<FormBlocState>>(
+        listenWhen: (previous, next) => previous is None && next is Some,
         listener: (context, state) {
           setState(() {
-            _nameController.text =
-                (state as FireStateLoaded<FormBlocState>).value.name;
+            _nameController.text = (state as Some<FormBlocState>).value.name;
           });
         },
         builder: (context, state) {
           switch (state) {
-            case FireStateLoading():
+            case None():
               return const Center(child: CircularProgressIndicator());
-            case FireStateLoaded(value: final state):
+            case Some(value: final state):
               return Padding(
                 padding: const EdgeInsets.all(20),
                 child: Column(

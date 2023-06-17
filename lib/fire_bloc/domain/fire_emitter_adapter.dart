@@ -3,10 +3,10 @@ part of 'fire_bloc.dart';
 class _FireEmitterAdapter<State> implements Emitter<State> {
   _FireEmitterAdapter(this._emitter);
 
-  final Emitter<FireState<State>> _emitter;
+  final Emitter<Option<State>> _emitter;
 
   @override
-  void call(State state) => _emitter.call(FireStateLoaded(state));
+  void call(State state) => _emitter.call(Some(state));
 
   @override
   Future<void> forEach<T>(
@@ -16,11 +16,10 @@ class _FireEmitterAdapter<State> implements Emitter<State> {
   }) =>
       _emitter.forEach(
         stream,
-        onData: (data) => FireStateLoaded(onData(data)),
+        onData: (data) => Some(onData(data)),
         onError: onError == null
             ? null
-            : (error, stackTrace) =>
-                FireStateLoaded(onError(error, stackTrace)),
+            : (error, stackTrace) => Some(onError(error, stackTrace)),
       );
 
   @override

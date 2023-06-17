@@ -1,13 +1,13 @@
-import 'package:evaporated_storage/fire_bloc/domain/fire_bloc.dart';
+import 'package:evaporated_storage/evaporated_storage.dart';
 
 class CounterCubit extends FireCubit<int> {
-  CounterCubit() : super(FireStateLoaded(0));
+  CounterCubit() : super(const Some(0));
 
   void increment() {
     switch (state) {
-      case FireStateLoaded(value: final value):
+      case Some(value: final value):
         fireEmit(value + 1);
-      case FireStateLoading():
+      case None():
     }
   }
 
