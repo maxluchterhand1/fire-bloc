@@ -10,17 +10,22 @@ final class HiveEvaporatedStorage implements EvaporatedStorage {
 
   static const _boxName = 'hive_evaporated_storage';
 
-  final _box = Hive.box<Map<String, dynamic>>(_boxName);
+  late final Box<Map<dynamic, dynamic>> _box;
 
   @override
-  Future<void> initialize() async => Hive.initFlutter();
+  Future<void> initialize() async {
+    await Hive.initFlutter();
+    _box = await Hive.openBox(_boxName);
+  }
 
   @override
   Future<Result<void, void>> clear() async {
     try {
       await _box.clear();
+      print('Hive clear() success');
       return Success.empty();
     } catch (_) {
+      print('Hive clear() failure');
       return const Failure();
     }
   }
@@ -29,8 +34,10 @@ final class HiveEvaporatedStorage implements EvaporatedStorage {
   Future<Result<void, void>> delete(String key) async {
     try {
       await _box.delete(key);
+      print('Hive delete() success');
       return Success.empty();
     } catch (_) {
+      print('Hive delete() failure');
       return const Failure();
     }
   }
@@ -38,10 +45,23 @@ final class HiveEvaporatedStorage implements EvaporatedStorage {
   @override
   Future<Result<Option<Map<String, dynamic>>, void>> read(String key) async {
     try {
-      final result = _box.get(key);
-      if (result == null) return const Success(None());
-      return Success(Some(result));
+      final hiveData = _box.get(key);
+      if (hiveData == null) return const Success(None());
+      final result = <String, dynamic>{};
+      for (final MapEntry(:key, :value) in hiveData.entries) {
+        if (key is String) {
+          result[key] = value;
+        } else {
+          print('Hive read() failure');
+          assert(false);
+          return const Failure();
+        }
+      }
+
+      print('Hive read() success');
+      return Success(Some(result as Map<String, dynamic>));
     } catch (_) {
+      print('Hive read() failure');
       return const Failure();
     }
   }
@@ -53,8 +73,10 @@ final class HiveEvaporatedStorage implements EvaporatedStorage {
   ) async {
     try {
       await _box.put(key, value);
+      print('Hive write() success');
       return Success.empty();
     } catch (_) {
+      print('Hive write() failure');
       return const Failure();
     }
   }
@@ -63,8 +85,10 @@ final class HiveEvaporatedStorage implements EvaporatedStorage {
   Future<Result<List<String>, void>> keys() async {
     try {
       final keys = _box.keys.toList();
+      print('Hive keys() success');
       return Success(keys.map((e) => e.toString()).toList());
     } catch (_) {
+      print('Hive keys() failure');
       return const Failure();
     }
   }

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:evaporated_storage/core/option.dart';
 import 'package:evaporated_storage/core/result.dart';
+import 'package:evaporated_storage/evaporated_storage/data/evaporated_repository.dart';
 import 'package:evaporated_storage/evaporated_storage/domain/evaporated_storage.dart';
 
 part 'fire_emitter_adapter.dart';
@@ -12,20 +13,24 @@ typedef FireEventHandler<Event, State> = FutureOr<void> Function(
   Emitter<State> fireEmit,
 );
 
+abstract interface class _EvaporatedStorageProviding {
+  EvaporatedStorage get storage;
+}
+
 abstract class FireBloc<Event, State> extends Bloc<Event, Option<State>>
-    with FireMixin<State> {
-  FireBloc(super.state) {
+    with FireMixin<State>
+    implements _EvaporatedStorageProviding {
+  FireBloc(
+    super.state, {
+    EvaporatedStorage? storage,
+  }) : _storage = storage {
     _incinerate();
   }
 
-  static EvaporatedStorage? _storage;
+  @override
+  EvaporatedStorage get storage => _storage ?? EvaporatedRepository.instance;
 
-  static set storage(EvaporatedStorage? storage) => _storage = storage;
-
-  static EvaporatedStorage get storage {
-    if (_storage == null) throw const StorageNotFound();
-    return _storage!;
-  }
+  final EvaporatedStorage? _storage;
 
   void fireOn<E extends Event>(
     FireEventHandler<E, State> handler, {
@@ -38,15 +43,25 @@ abstract class FireBloc<Event, State> extends Bloc<Event, Option<State>>
 }
 
 abstract class FireCubit<State> extends Cubit<Option<State>>
-    with FireMixin<State> {
-  FireCubit(super.state) {
+    with FireMixin<State>
+    implements _EvaporatedStorageProviding {
+  FireCubit(
+    super.state, {
+    EvaporatedStorage? storage,
+  }) : _storage = storage {
     _incinerate();
   }
+
+  @override
+  EvaporatedStorage get storage => _storage ?? EvaporatedRepository.instance;
+
+  final EvaporatedStorage? _storage;
 
   void fireEmit(State state) => emit(Some(state));
 }
 
-mixin FireMixin<State> on BlocBase<Option<State>> {
+mixin FireMixin<State> on BlocBase<Option<State>>
+    implements _EvaporatedStorageProviding {
   bool _incinerated = false;
 
   Option<State>? _state;
@@ -54,7 +69,6 @@ mixin FireMixin<State> on BlocBase<Option<State>> {
   Map<String, dynamic>? _stateJson;
 
   Future<void> _incinerate() async {
-    final storage = FireBloc.storage;
     switch (await storage.read(storageToken)) {
       case Failure():
         onError(Object(), StackTrace.current); // TODO
@@ -106,7 +120,6 @@ mixin FireMixin<State> on BlocBase<Option<State>> {
   @override
   void onChange(Change<Option<State>> change) {
     super.onChange(change);
-    final storage = FireBloc.storage;
     final state = change.nextState;
     try {
       final stateJson = _toJson(state);
@@ -262,7 +275,7 @@ mixin FireMixin<State> on BlocBase<Option<State>> {
 
   String get storageToken => '$storagePrefix$id';
 
-  Future<void> clear() => FireBloc.storage.delete(storageToken);
+  Future<void> clear() => storage.delete(storageToken);
 
   State? fromJson(Map<String, dynamic> json);
 

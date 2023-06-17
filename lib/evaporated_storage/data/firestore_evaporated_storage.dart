@@ -32,8 +32,10 @@ final class FirestoreEvaporatedStorage implements EvaporatedStorage {
         case None():
           break;
       }
+      print('Firestore clear() success');
       return Success.empty();
     } catch (_) {
+      print('Firestore clear() failure');
       return const Failure();
     }
   }
@@ -53,8 +55,10 @@ final class FirestoreEvaporatedStorage implements EvaporatedStorage {
         case None():
           break;
       }
+      print('Firestore delete() success');
       return Success.empty();
     } catch (_) {
+      print('Firestore delete() success');
       return const Failure();
     }
   }
@@ -68,15 +72,19 @@ final class FirestoreEvaporatedStorage implements EvaporatedStorage {
           final blocDocument = userCollection.docs
               .firstWhereOrNull((element) => element.id == key);
 
+          print('Firestore read() success');
           if (blocDocument == null) {
             return const Success(None());
           } else {
             return Success(Some(blocDocument.data()));
           }
+
         case None():
+          print('Firestore read() success');
           return const Success(None());
       }
     } catch (_) {
+      print('Firestore read() failure');
       return const Failure();
     }
   }
@@ -91,8 +99,10 @@ final class FirestoreEvaporatedStorage implements EvaporatedStorage {
     final userCollectionRef = _firestore.collection(userId);
     try {
       await userCollectionRef.doc(key).set(value);
+      print('Firestore write() success');
       return Success.empty();
     } catch (_) {
+      print('Firestore write() failure');
       return const Failure();
     }
   }
@@ -103,11 +113,14 @@ final class FirestoreEvaporatedStorage implements EvaporatedStorage {
       switch (_userCollectionRef) {
         case Some(value: final ref):
           final snapshot = await ref.get();
+          print('Firestore keys() success');
           return Success(snapshot.docs.map((e) => e.id).toList());
         case None():
+          print('Firestore keys() success');
           return const Success([]);
       }
     } catch (_) {
+      print('Firestore keys() failure');
       return const Failure();
     }
   }

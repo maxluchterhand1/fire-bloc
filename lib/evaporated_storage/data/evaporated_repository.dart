@@ -4,6 +4,7 @@ import 'package:collection/collection.dart';
 import 'package:evaporated_storage/core/option.dart';
 import 'package:evaporated_storage/core/result.dart';
 import 'package:evaporated_storage/evaporated_storage/domain/evaporated_storage.dart';
+import 'package:evaporated_storage/evaporated_storage/domain/timeout_wrapper.dart';
 
 sealed class _EvaporatedRepositoryPendingAction {}
 
@@ -43,12 +44,24 @@ class EvaporatedRepository implements EvaporatedStorage {
     required EvaporatedStorage localStorage,
     required EvaporatedStorage remoteStorage,
   })  : _localStorage = localStorage,
-        _remoteStorage = remoteStorage;
+        _remoteStorage = EvaporatedStorageTimeoutWrapper(
+          remoteStorage,
+          timeout: _remoteTimeout,
+        );
 
   static const _evaporatedRepositoryLocalStorageKey =
       'f3ecd437-7a59-41c4-af67-cfac536b77b9';
 
   static const _evaporatedRepositoryStatusKey = 'status';
+
+  static const _remoteTimeout = Duration(seconds: 7);
+
+  static EvaporatedRepository? _instance;
+
+  static EvaporatedRepository get instance {
+    if (_instance == null) throw Exception();
+    return _instance!;
+  }
 
   final EvaporatedStorage _localStorage;
 
@@ -61,6 +74,15 @@ class EvaporatedRepository implements EvaporatedStorage {
 
   @override
   Future<void> initialize() async {
+    _instance ??= this;
+    await _localStorage.initialize();
+    try {
+      await _remoteStorage.initialize();
+    } on TimeoutException catch (_) {
+      await _resolveTo(_EvaporatedRepositoryStatus.syncRequired);
+      return;
+    }
+
     final repoData =
         await _localStorage.read(_evaporatedRepositoryLocalStorageKey);
 
@@ -81,20 +103,22 @@ class EvaporatedRepository implements EvaporatedStorage {
                 Failure() => _EvaporatedRepositoryStatus.syncRequired,
               };
             }
-            await _resolvePending();
-            _status = status;
+            await _resolveTo(status);
           case None():
-            await _resolvePending();
-            _status = _EvaporatedRepositoryStatus.allGood;
-            switch (await _saveStatus(_EvaporatedRepositoryStatus.allGood)) {
-              case Failure():
-                throw Exception();
-              case Success():
-                return;
-            }
+            await _resolveTo(_EvaporatedRepositoryStatus.allGood);
         }
       case Failure():
         throw Exception();
+    }
+  }
+
+  Future<void> _resolveTo(_EvaporatedRepositoryStatus status) async {
+    await _resolvePending();
+    switch (await _saveStatusToLocal(status)) {
+      case Failure():
+        throw Exception();
+      case Success():
+        _status = status;
     }
   }
 
@@ -148,7 +172,7 @@ class EvaporatedRepository implements EvaporatedStorage {
     return Success.empty();
   }
 
-  Future<Result<void, void>> _saveStatus(
+  Future<Result<void, void>> _saveStatusToLocal(
     _EvaporatedRepositoryStatus status,
   ) =>
       _localStorage.write(
@@ -234,14 +258,14 @@ class EvaporatedRepository implements EvaporatedStorage {
                   case Success():
                     return Success(Some(value));
                   case Failure():
-                    return _localStorage.read(key); // TODO: Revisit this
+                    return const Failure();
                 }
               case None():
                 switch (await _localStorage.delete(key)) {
                   case Success():
                     return const Success(None());
                   case Failure():
-                    return _localStorage.read(key); // TODO: Revisit this
+                    return const Failure();
                 }
             }
         }
@@ -270,8 +294,25 @@ class EvaporatedRepository implements EvaporatedStorage {
       case _EvaporatedRepositoryStatus.allGood:
         switch (await _remoteStorage.write(key, value)) {
           case Failure():
-            _status = _EvaporatedRepositoryStatus.syncRequired;
-            return const Failure();
+            switch (await _localStorage.write(key, value)) {
+              case Failure():
+                return const Failure();
+              case Success():
+                switch (await _saveStatusToLocal(
+                  _EvaporatedRepositoryStatus.syncRequired,
+                )) {
+                  case Success():
+                    _status = _EvaporatedRepositoryStatus.syncRequired;
+                    return Success.empty();
+                  case Failure():
+                    switch (await _localStorage.delete(key)) {
+                      case Success(): // success only in undoing the write to local
+                        return const Failure(); // the write is still a failure
+                      case Failure():
+                        throw Exception(); // at this point the relation between remote and local is corrupted
+                    }
+                }
+            }
           case Success():
             switch (await _localStorage.write(key, value)) {
               case Success():
