@@ -1,10 +1,12 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:collection/collection.dart';
-import 'package:evaporated_storage/core/option.dart';
-import 'package:evaporated_storage/core/result.dart';
-import 'package:evaporated_storage/evaporated_storage/domain/evaporated_storage.dart';
-import 'package:evaporated_storage/evaporated_storage/domain/timeout_wrapper.dart';
+import 'package:fire_bloc/core/option.dart';
+import 'package:fire_bloc/core/result.dart';
+import 'package:fire_bloc/evaporated_storage/domain/evaporated_storage.dart';
+import 'package:fire_bloc/evaporated_storage/domain/timeout_wrapper.dart';
+import 'package:meta/meta.dart';
 
 sealed class _EvaporatedRepositoryPendingAction {}
 
@@ -28,13 +30,14 @@ class _EvaporatedRepositoryPendingReadAction
   final Completer<Result<Option<Map<String, dynamic>>, void>> completer;
 }
 
-enum _EvaporatedRepositoryStatus {
+@visibleForTesting
+enum EvaporatedRepositoryStatus {
   uninitialized('uninitialized'),
   pending('pending'),
   allGood('allGood'),
   syncRequired('syncRequired');
 
-  const _EvaporatedRepositoryStatus(this.stringValue);
+  const EvaporatedRepositoryStatus(this.stringValue);
 
   final String stringValue;
 }
@@ -69,8 +72,7 @@ class EvaporatedRepository implements EvaporatedStorage {
 
   final _pending = <_EvaporatedRepositoryPendingAction>[];
 
-  _EvaporatedRepositoryStatus _status =
-      _EvaporatedRepositoryStatus.uninitialized;
+  EvaporatedRepositoryStatus _status = EvaporatedRepositoryStatus.uninitialized;
 
   @override
   Future<void> initialize() async {
@@ -79,7 +81,7 @@ class EvaporatedRepository implements EvaporatedStorage {
     try {
       await _remoteStorage.initialize();
     } on TimeoutException catch (_) {
-      await _resolveTo(_EvaporatedRepositoryStatus.syncRequired);
+      await _resolveTo(EvaporatedRepositoryStatus.syncRequired);
       return;
     }
 
@@ -93,26 +95,26 @@ class EvaporatedRepository implements EvaporatedStorage {
             final statusString = value[_evaporatedRepositoryStatusKey];
             if (statusString is! String) throw Exception();
 
-            var status = _EvaporatedRepositoryStatus.values
+            var status = EvaporatedRepositoryStatus.values
                 .firstWhereOrNull((e) => e.stringValue == statusString);
             if (status == null) throw Exception();
 
-            if (status case _EvaporatedRepositoryStatus.syncRequired) {
+            if (status case EvaporatedRepositoryStatus.syncRequired) {
               status = switch (await _synchronize()) {
-                Success() => _EvaporatedRepositoryStatus.allGood,
-                Failure() => _EvaporatedRepositoryStatus.syncRequired,
+                Success() => EvaporatedRepositoryStatus.allGood,
+                Failure() => EvaporatedRepositoryStatus.syncRequired,
               };
             }
             await _resolveTo(status);
           case None():
-            await _resolveTo(_EvaporatedRepositoryStatus.allGood);
+            await _resolveTo(EvaporatedRepositoryStatus.allGood);
         }
       case Failure():
         throw Exception();
     }
   }
 
-  Future<void> _resolveTo(_EvaporatedRepositoryStatus status) async {
+  Future<void> _resolveTo(EvaporatedRepositoryStatus status) async {
     await _resolvePending();
     switch (await _saveStatusToLocal(status)) {
       case Failure():
@@ -140,7 +142,16 @@ class EvaporatedRepository implements EvaporatedStorage {
   }
 
   Future<Result<void, void>> _synchronize() async {
-    switch (await keys()) {
+    switch (await _pushNewLocalData()) {
+      case Failure():
+        return const Failure();
+      case Success():
+        return _deleteOldRemoteData();
+    }
+  }
+
+  Future<Result<void, void>> _pushNewLocalData() async {
+    switch (await _localStorage.keys()) {
       case Success(value: final keys):
         for (final key in keys) {
           switch (await _localStorage.read(key)) {
@@ -172,8 +183,36 @@ class EvaporatedRepository implements EvaporatedStorage {
     return Success.empty();
   }
 
+  Future<Result<void, void>> _deleteOldRemoteData() async {
+    switch (await _remoteStorage.keys()) {
+      case Success(value: final remoteKeys):
+        switch (await _localStorage.keys()) {
+          case Success(value: final localKeys):
+            for (final key in remoteKeys) {
+              if (!localKeys.contains(key)) {
+                switch (await _remoteStorage.delete(key)) {
+                  case Success():
+                    continue;
+                  case Failure():
+                    assert(false);
+                    return const Failure();
+                }
+              }
+            }
+          case Failure():
+            assert(false);
+            return const Failure();
+        }
+      case Failure():
+        assert(false);
+        return const Failure();
+    }
+
+    return Success.empty();
+  }
+
   Future<Result<void, void>> _saveStatusToLocal(
-    _EvaporatedRepositoryStatus status,
+    EvaporatedRepositoryStatus status,
   ) =>
       _localStorage.write(
         _evaporatedRepositoryLocalStorageKey,
@@ -183,19 +222,19 @@ class EvaporatedRepository implements EvaporatedStorage {
   @override
   Future<Result<void, void>> clear() async {
     switch (_status) {
-      case _EvaporatedRepositoryStatus.uninitialized:
+      case EvaporatedRepositoryStatus.uninitialized:
         return const Failure();
-      case _EvaporatedRepositoryStatus.pending:
+      case EvaporatedRepositoryStatus.pending:
         _pending.add(_EvaporatedRepositoryPendingVoidAction(action: clear));
         return (_pending.last as _EvaporatedRepositoryPendingVoidAction)
             .completer
             .future;
-      case _EvaporatedRepositoryStatus.syncRequired:
+      case EvaporatedRepositoryStatus.syncRequired:
         return _localStorage.clear();
-      case _EvaporatedRepositoryStatus.allGood:
+      case EvaporatedRepositoryStatus.allGood:
         switch (await _remoteStorage.clear()) {
           case Failure():
-            _status = _EvaporatedRepositoryStatus.syncRequired;
+            _status = EvaporatedRepositoryStatus.syncRequired;
           case Success():
             break;
         }
@@ -206,9 +245,9 @@ class EvaporatedRepository implements EvaporatedStorage {
   @override
   Future<Result<void, void>> delete(String key) async {
     switch (_status) {
-      case _EvaporatedRepositoryStatus.uninitialized:
+      case EvaporatedRepositoryStatus.uninitialized:
         return const Failure();
-      case _EvaporatedRepositoryStatus.pending:
+      case EvaporatedRepositoryStatus.pending:
         _pending.add(
           _EvaporatedRepositoryPendingVoidAction(
             action: () => delete(key),
@@ -217,12 +256,12 @@ class EvaporatedRepository implements EvaporatedStorage {
         return (_pending.last as _EvaporatedRepositoryPendingVoidAction)
             .completer
             .future;
-      case _EvaporatedRepositoryStatus.syncRequired:
+      case EvaporatedRepositoryStatus.syncRequired:
         return _localStorage.delete(key);
-      case _EvaporatedRepositoryStatus.allGood:
+      case EvaporatedRepositoryStatus.allGood:
         switch (await _remoteStorage.delete(key)) {
           case Failure():
-            _status = _EvaporatedRepositoryStatus.syncRequired;
+            _status = EvaporatedRepositoryStatus.syncRequired;
           case Success():
             break;
         }
@@ -233,9 +272,9 @@ class EvaporatedRepository implements EvaporatedStorage {
   @override
   Future<Result<Option<Map<String, dynamic>>, void>> read(String key) async {
     switch (_status) {
-      case _EvaporatedRepositoryStatus.uninitialized:
+      case EvaporatedRepositoryStatus.uninitialized:
         return const Failure();
-      case _EvaporatedRepositoryStatus.pending:
+      case EvaporatedRepositoryStatus.pending:
         _pending.add(
           _EvaporatedRepositoryPendingReadAction(
             action: () => read(key),
@@ -244,12 +283,12 @@ class EvaporatedRepository implements EvaporatedStorage {
         return (_pending.last as _EvaporatedRepositoryPendingReadAction)
             .completer
             .future;
-      case _EvaporatedRepositoryStatus.syncRequired:
+      case EvaporatedRepositoryStatus.syncRequired:
         return _localStorage.read(key);
-      case _EvaporatedRepositoryStatus.allGood:
+      case EvaporatedRepositoryStatus.allGood:
         switch (await _remoteStorage.read(key)) {
           case Failure():
-            _status = _EvaporatedRepositoryStatus.syncRequired;
+            _status = EvaporatedRepositoryStatus.syncRequired;
             return _localStorage.read(key);
           case Success(value: final value):
             switch (value) {
@@ -278,9 +317,9 @@ class EvaporatedRepository implements EvaporatedStorage {
     Map<String, dynamic> value,
   ) async {
     switch (_status) {
-      case _EvaporatedRepositoryStatus.uninitialized:
+      case EvaporatedRepositoryStatus.uninitialized:
         return const Failure();
-      case _EvaporatedRepositoryStatus.pending:
+      case EvaporatedRepositoryStatus.pending:
         _pending.add(
           _EvaporatedRepositoryPendingVoidAction(
             action: () => write(key, value),
@@ -289,9 +328,9 @@ class EvaporatedRepository implements EvaporatedStorage {
         return (_pending.last as _EvaporatedRepositoryPendingVoidAction)
             .completer
             .future;
-      case _EvaporatedRepositoryStatus.syncRequired:
+      case EvaporatedRepositoryStatus.syncRequired:
         return _localStorage.write(key, value);
-      case _EvaporatedRepositoryStatus.allGood:
+      case EvaporatedRepositoryStatus.allGood:
         switch (await _remoteStorage.write(key, value)) {
           case Failure():
             switch (await _localStorage.write(key, value)) {
@@ -299,10 +338,10 @@ class EvaporatedRepository implements EvaporatedStorage {
                 return const Failure();
               case Success():
                 switch (await _saveStatusToLocal(
-                  _EvaporatedRepositoryStatus.syncRequired,
+                  EvaporatedRepositoryStatus.syncRequired,
                 )) {
                   case Success():
-                    _status = _EvaporatedRepositoryStatus.syncRequired;
+                    _status = EvaporatedRepositoryStatus.syncRequired;
                     return Success.empty();
                   case Failure():
                     switch (await _localStorage.delete(key)) {
@@ -330,5 +369,19 @@ class EvaporatedRepository implements EvaporatedStorage {
   }
 
   @override
-  Future<Result<List<String>, void>> keys() => _localStorage.keys();
+  Future<Result<List<String>, void>> keys() => throw UnimplementedError();
+
+  @visibleForTesting
+  Future<void> testInitialize([
+    EvaporatedRepositoryStatus status = EvaporatedRepositoryStatus.allGood,
+  ]) async {
+    var newStatus = status;
+    if (status case EvaporatedRepositoryStatus.syncRequired) {
+      newStatus = switch (await _synchronize()) {
+        Success() => EvaporatedRepositoryStatus.allGood,
+        Failure() => EvaporatedRepositoryStatus.syncRequired,
+      };
+    }
+    await _resolveTo(newStatus);
+  }
 }

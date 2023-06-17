@@ -1,8 +1,8 @@
 import 'dart:async';
 
-import 'package:evaporated_storage/core/option.dart';
-import 'package:evaporated_storage/core/result.dart';
-import 'package:evaporated_storage/evaporated_storage/domain/evaporated_storage.dart';
+import 'package:fire_bloc/core/option.dart';
+import 'package:fire_bloc/core/result.dart';
+import 'package:fire_bloc/evaporated_storage/domain/evaporated_storage.dart';
 
 class EvaporatedStorageTimeoutWrapper implements EvaporatedStorage {
   EvaporatedStorageTimeoutWrapper(

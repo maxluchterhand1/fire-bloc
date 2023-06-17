@@ -1,7 +1,7 @@
 import 'dart:async';
 
-import 'package:evaporated_storage/core/option.dart';
-import 'package:evaporated_storage/core/result.dart';
+import 'package:fire_bloc/core/option.dart';
+import 'package:fire_bloc/core/result.dart';
 
 abstract interface class EvaporatedStorage {
   Future<void> initialize();

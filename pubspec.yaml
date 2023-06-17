@@ -1,4 +1,4 @@
-name: evaporated_storage
+name: fire_bloc
 description: todo
 version: 0.0.1
 
@@ -14,6 +14,7 @@ dependencies:
   hive: ^2.2.3
   hive_flutter: ^1.1.0
   hydrated_bloc: ^9.1.1
+  meta: ^1.9.1
   very_good_analysis: ^4.0.0+1
 
 dev_dependencies:

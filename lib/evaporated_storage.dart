@@ -1,8 +1,8 @@
 /// Support for doing something awesome.
 ///
 /// More dartdocs go here.
-library evaporated_storage;
+library fire_bloc;
 
-export 'package:evaporated_storage/core/option.dart';
-export 'package:evaporated_storage/core/result.dart';
-export 'package:evaporated_storage/fire_bloc/domain/fire_bloc.dart';
+export 'package:fire_bloc/core/option.dart';
+export 'package:fire_bloc/core/result.dart';
+export 'package:fire_bloc/fire_bloc/domain/fire_bloc.dart';

@@ -2,9 +2,9 @@ import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart' as fs;
 import 'package:collection/collection.dart';
-import 'package:evaporated_storage/core/option.dart';
-import 'package:evaporated_storage/core/result.dart';
-import 'package:evaporated_storage/evaporated_storage/domain/evaporated_storage.dart';
+import 'package:fire_bloc/core/option.dart';
+import 'package:fire_bloc/core/result.dart';
+import 'package:fire_bloc/evaporated_storage/domain/evaporated_storage.dart';
 import 'package:firebase_auth/firebase_auth.dart' as auth;
 
 final class FirestoreEvaporatedStorage implements EvaporatedStorage {

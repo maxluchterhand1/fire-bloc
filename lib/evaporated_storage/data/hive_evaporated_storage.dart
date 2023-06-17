@@ -1,14 +1,19 @@
 import 'dart:async';
 
-import 'package:evaporated_storage/core/option.dart';
-import 'package:evaporated_storage/core/result.dart';
-import 'package:evaporated_storage/evaporated_storage/domain/evaporated_storage.dart';
+import 'package:fire_bloc/core/option.dart';
+import 'package:fire_bloc/core/result.dart';
+import 'package:fire_bloc/evaporated_storage/domain/evaporated_storage.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
 final class HiveEvaporatedStorage implements EvaporatedStorage {
-  HiveEvaporatedStorage();
+  factory HiveEvaporatedStorage.instance() =>
+      _instance ??= HiveEvaporatedStorage._();
 
-  static const _boxName = 'hive_evaporated_storage';
+  HiveEvaporatedStorage._();
+
+  static HiveEvaporatedStorage? _instance;
+
+  static const _boxName = 'hive_fire_bloc';
 
   late final Box<Map<dynamic, dynamic>> _box;
 
