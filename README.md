@@ -13,10 +13,11 @@ by [package:hydrated_bloc](https://pub.dev/packages/hydrated_bloc).
 provider. Out of the box, it comes with its own implementations: `FirestoreEvaporatedStorage`
 and `HiveEvaporatedStorage`.
 
-The reconciliation of the local storage and the remote storage is performed
+The mediation between the local storage and the remote storage is performed
 by `EvaporatedRepository`, which also implements `EvaporatedStorage`. If you require special
-logic here, you can create your own repository and pass that to `FireBloc`'s constructor. However,
-`EvaporatedRepository` should suffice for most users.
+mediation logic, you can create your own repository and assign that
+to `EvaporatedRepository.instance`. However, `EvaporatedRepository` should suffice
+for most users.
 
 `HiveEvaporatedStorage` is built on top of [hive](https://pub.dev/packages/hive) for a
 platform-agnostic, performant storage layer.
@@ -26,7 +27,7 @@ authenticated through Firebase Auth in order to function. Every user gets their 
 in Firestore. Each of those collections contains the state of every `FireBloc` and `FireCubit`.
 
 Since the state of `FireBloc` and `FireCubit` may be loaded over network, there is no way to
-guarantee that the state is available when first accessed. Therefore, the state is wrapped around
+guarantee that the state is available when first accessed. Therefore, the state is wrapped by
 a sealed class `Option`.
 
 ```dart
@@ -71,15 +72,14 @@ service cloud.firestore {
 In your main function, you need to set up the storage that is used by `FireBloc` and `FireCubit`.
 The intended way of doing this is
 
-1. Create a local storage and a remote storage.
-2. Create a repository that is going to mediate between the two.
-3. Assign that repository to `EvaporatedRepository.instance` and initialize it.
+1. Instantiate the local storage and the remote storage.
+2. Instantiate the repository that is going to mediate between the two.
+3. Assign the repository to `EvaporatedRepository.instance` and initialize it.
 
-However, since `EvaporatedRepository.instance` is of type `EvaporatedStorage`, you could
-theoretically choose to only use remote or local storage by just assigning a local storage
-implementation. Or you could go into a totally different direction. If you are uncertain about any
-of this though, just ignore the last two sentences and follow along the recommended way of using
-this package:
+Since `EvaporatedRepository.instance` is just of type `EvaporatedStorage`, you could
+choose to only use remote or local storage by just assigning a local storage implementation. Or you
+could go into a totally different direction. If you are uncertain about any of this though, just
+ignore the last two sentences and follow along the recommended way of using this package:
 
 ```dart
 Future<void> main() async {
@@ -156,9 +156,13 @@ class CounterBloc extends FireBloc<CounterEvent, int> {
   }
 
   @override
-  int fromJson(Map<String, dynamic> json) => json['value'] as int;
+  int? fromJson(Map<String, dynamic> json) =>
+      switch (json['value']) {
+        final int value => value,
+        _ => null,
+      };
 
   @override
-  Map<String, int> toJson(int state) => {'value': state};
+  Map<String, dynamic>? toJson(int state) => {'value': state};
 }
 ```
