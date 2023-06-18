@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:collection/collection.dart';
 import 'package:fire_bloc/core/option.dart';
@@ -59,9 +58,14 @@ class EvaporatedRepository implements EvaporatedStorage {
 
   static const _remoteTimeout = Duration(seconds: 7);
 
-  static EvaporatedRepository? _instance;
+  static EvaporatedStorage? _instance;
 
-  static EvaporatedRepository get instance {
+  static set instance(EvaporatedStorage repository) {
+    if (_instance != null) throw Exception();
+    _instance = repository;
+  }
+
+  static EvaporatedStorage get instance {
     if (_instance == null) throw Exception();
     return _instance!;
   }
@@ -76,7 +80,6 @@ class EvaporatedRepository implements EvaporatedStorage {
 
   @override
   Future<void> initialize() async {
-    _instance ??= this;
     await _localStorage.initialize();
     try {
       await _remoteStorage.initialize();

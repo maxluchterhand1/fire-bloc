@@ -1,39 +1,164 @@
-<!-- 
-This README describes the package. If you publish this package to pub.dev,
-this README's contents appear on the landing page for your package.
+An extension to [package:bloc](https://github.com/felangel/bloc) which automatically persists and
+restores bloc and cubit states locally and remotely (Firestore by default). Built to work
+with [package:bloc](https://pub.dev/packages/bloc). Heavily inspired
+by [package:hydrated_bloc](https://pub.dev/packages/hydrated_bloc).
 
-For information about how to write a good package README, see the guide for
-[writing package pages](https://dart.dev/guides/libraries/writing-package-pages). 
+**Learn more at [bloclibrary.dev](https://bloclibrary.dev)!**
 
-For general information about developing packages, see the Dart guide for
-[creating packages](https://dart.dev/guides/libraries/create-library-packages)
-and the Flutter guide for
-[developing packages and plugins](https://flutter.dev/developing-packages). 
--->
+---
 
-TODO: Put a short description of the package here that helps potential users
-know whether this package might be useful for them.
+## Overview
 
-## Features
+`fire_bloc` exports an `EvaporatedStorage` interface, which means it can work with any storage
+provider. Out of the box, it comes with its own implementations: `FirestoreEvaporatedStorage`
+and `HiveEvaporatedStorage`.
 
-TODO: List what your package can do. Maybe include images, gifs, or videos.
+The reconciliation of the local storage and the remote storage is performed
+by `EvaporatedRepository`, which also implements `EvaporatedStorage`. If you require special
+logic here, you can create your own repository and pass that to `FireBloc`'s constructor. However,
+`EvaporatedRepository` should suffice for most users.
 
-## Getting started
+`HiveEvaporatedStorage` is built on top of [hive](https://pub.dev/packages/hive) for a
+platform-agnostic, performant storage layer.
 
-TODO: List prerequisites and provide or point to information on how to
-start using the package.
+The implementations provided by `fire_bloc` store the state for each user and thus require a user
+authenticated through Firebase Auth in order to function. Every user gets their own collection
+in Firestore. Each of those collections contains the state of every `FireBloc` and `FireCubit`.
+
+Since the state of `FireBloc` and `FireCubit` may be loaded over network, there is no way to
+guarantee that the state is available when first accessed. Therefore, the state is wrapped around
+a sealed class `Option`.
+
+```dart
+sealed class Option<State> {}
+
+class Some<State> implements Option<State> {
+  const Some(this.value);
+
+  final State value;
+}
+
+class None<State> implements Option<State> {
+  const None();
+}
+```
+
+When you access the state of `FireBloc` or `FireCubit`, you need to `switch` on the state to
+check whether it is already available. Once the state is `Some`, it will not go back to `None`
+until the bloc/cubit is closed.
 
 ## Usage
 
-TODO: Include short and useful examples for package users. Add longer examples
-to `/example` folder. 
+### Setup
 
-```dart
-const like = 'sample';
+Your project needs to be connected to a Firebase project that uses Firestore and Authentication.
+
+Your Firestore rules need to allow each user to read from and write to their own collection.
+
+```
+rules_version = '2';
+
+service cloud.firestore {
+    match /databases/{database}/documents {
+        // Each user can read and write documents in their own collection.
+        match /{userId}/{document=**} {
+            allow read, write: if request.auth != null && request.auth.uid == userId;
+        }
+    }
+}
 ```
 
-## Additional information
+In your main function, you need to set up the storage that is used by `FireBloc` and `FireCubit`.
+The intended way of doing this is
 
-TODO: Tell users more about the package: where to find more information, how to 
-contribute to the package, how to file issues, what response they can expect 
-from the package authors, and more.
+1. Create a local storage and a remote storage.
+2. Create a repository that is going to mediate between the two.
+3. Assign that repository to `EvaporatedRepository.instance` and initialize it.
+
+However, since `EvaporatedRepository.instance` is of type `EvaporatedStorage`, you could
+theoretically choose to only use remote or local storage by just assigning a local storage
+implementation. Or you could go into a totally different direction. If you are uncertain about any
+of this though, just ignore the last two sentences and follow along the recommended way of using
+this package:
+
+```dart
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
+  final remoteStorage = FirestoreEvaporatedStorage(
+    auth: FirebaseAuth.instance,
+    firestore: FirebaseFirestore.instance,
+  );
+
+  final localStorage = HiveEvaporatedStorage.instance();
+
+  EvaporatedRepository.instance = EvaporatedRepository(
+    localStorage: localStorage,
+    remoteStorage: remoteStorage,
+  );
+
+  await EvaporatedRepository.instance.initialize();
+
+  runApp(const MyApp());
+}
+```
+
+### Create a FireCubit
+
+```dart
+class CounterCubit extends FireCubit<int> {
+  CounterCubit() : super(const Some(0));
+
+  void increment() {
+    switch (state) {
+      case Some(value: final value):
+        fireEmit(value + 1);
+      case None():
+    }
+  }
+
+  @override
+  int? fromJson(Map<String, dynamic> json) =>
+      switch (json['value']) {
+        final int value => value,
+        _ => null,
+      };
+
+  @override
+  Map<String, dynamic>? toJson(int state) => {'value': state};
+}
+```
+
+### Create a FireBloc
+
+```dart
+sealed class CounterEvent {}
+
+final class CounterIncrementPressed extends CounterEvent {}
+
+class CounterBloc extends FireBloc<CounterEvent, int> {
+  CounterBloc() : super(const Some(0)) {
+    fireOn<CounterEvent>((event, fireEmit) {
+      switch (state) {
+        case Some(value: final value):
+          switch (event) {
+            case CounterIncrementPressed():
+              fireEmit(value + 1);
+          }
+        case None():
+          break;
+      }
+    });
+  }
+
+  @override
+  int fromJson(Map<String, dynamic> json) => json['value'] as int;
+
+  @override
+  Map<String, int> toJson(int state) => {'value': state};
+}
+```

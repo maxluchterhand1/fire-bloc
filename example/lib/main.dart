@@ -1,9 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:evaporated_storage/evaporated_storage/data/evaporated_repository.dart';
-import 'package:evaporated_storage/evaporated_storage/data/firestore_evaporated_storage.dart';
-import 'package:evaporated_storage/evaporated_storage/data/hive_evaporated_storage.dart';
+
 import 'package:evaporated_storage_example/firebase_options.dart';
 import 'package:evaporated_storage_example/navigation/presentation/login_navigation.dart';
+import 'package:fire_bloc/evaporated_storage/data/evaporated_repository.dart';
+import 'package:fire_bloc/evaporated_storage/data/firestore_evaporated_storage.dart';
+import 'package:fire_bloc/evaporated_storage/data/hive_evaporated_storage.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
@@ -20,12 +21,14 @@ Future<void> main() async {
     firestore: FirebaseFirestore.instance,
   );
 
-  final localStorage = HiveEvaporatedStorage();
+  final localStorage = HiveEvaporatedStorage.instance();
 
-  await EvaporatedRepository(
+  EvaporatedRepository.instance = EvaporatedRepository(
     localStorage: localStorage,
     remoteStorage: remoteStorage,
-  ).initialize();
+  );
+
+  await EvaporatedRepository.instance.initialize();
 
   runApp(const MyApp());
 }
