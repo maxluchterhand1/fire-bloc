@@ -127,5 +127,76 @@ void main() {
       expect(successfulLocal.storage[testKey], null);
       expect(successfulRemote.storage[testKey], null);
     });
+
+    test('Repository clear remote sync', () async {
+      final successfulLocal =
+          _MockSuccessfulEvaporatedStorage({testKey: testValue});
+      final failingRemote = _MockFailingEvaporatedStorage({testKey: testValue});
+      final failingRepo = EvaporatedRepository(
+        localStorage: successfulLocal,
+        remoteStorage: failingRemote,
+      );
+      await failingRepo.testInitialize();
+      await failingRepo.clear();
+      expect(successfulLocal.storage[testKey], null);
+      expect(failingRemote.storage[testKey], testValue);
+      final successfulRemote =
+          _MockSuccessfulEvaporatedStorage({testKey: testValue});
+      final successfulRepo = EvaporatedRepository(
+        localStorage: successfulLocal,
+        remoteStorage: successfulRemote,
+      );
+      await successfulRepo
+          .testInitialize(EvaporatedRepositoryStatus.syncRequired);
+
+      expect(successfulLocal.storage[testKey], null);
+      expect(successfulRemote.storage[testKey], null);
+    });
+
+    test('Repository read remote priority', () async {
+      final successfulRepo = EvaporatedRepository(
+        localStorage: _MockSuccessfulEvaporatedStorage({
+          testKey: {'local': true},
+        }),
+        remoteStorage: _MockSuccessfulEvaporatedStorage({
+          testKey: {'local': false},
+        }),
+      );
+      await successfulRepo.testInitialize();
+
+      switch (await successfulRepo.read(testKey)) {
+        case Success(value: final value):
+          switch (value) {
+            case Some(value: final value):
+              expect(value['local'], false);
+            case None():
+              fail('failingRepo.read(testKey) returned None');
+          }
+        case Failure():
+          fail('failingRepo.read(testKey) returned Failure');
+      }
+
+      final failingRemoteRepo = EvaporatedRepository(
+        localStorage: _MockSuccessfulEvaporatedStorage({
+          testKey: {'local': true},
+        }),
+        remoteStorage: _MockFailingEvaporatedStorage({
+          testKey: {'local': false},
+        }),
+      );
+      await failingRemoteRepo.testInitialize();
+
+      switch (await failingRemoteRepo.read(testKey)) {
+        case Success(value: final value):
+          switch (value) {
+            case Some(value: final value):
+              expect(value['local'], true);
+            case None():
+              fail('failingRemoteRepo.read(testKey) returned None');
+          }
+        case Failure():
+          fail('failingRemoteRepo.read(testKey) returned Failure');
+      }
+    });
   });
 }
