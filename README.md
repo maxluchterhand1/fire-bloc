@@ -1,7 +1,7 @@
 ## fire_bloc: An Extension to Bloc for State Persistence
 
-An extension to [package:bloc](https://github.com/felangel/bloc) which automatically persists and  
-restores bloc and cubit states locally and remotely (Firestore by default). Built to work  
+An extension to [package:bloc](https://github.com/felangel/bloc) which automatically persists and
+restores bloc and cubit states locally and remotely (Firestore by default). Built to work
 with [package:bloc](https://pub.dev/packages/bloc). Heavily inspired
 by [package:hydrated_bloc](https://pub.dev/packages/hydrated_bloc).
 
@@ -43,10 +43,14 @@ your own repository and assigning that to `EvaporatedRepository.instance`.
 ### Setup
 
 Your project should be connected to a Firebase project that uses Firestore and Authentication to  
-facilitate user-specific state management and persistence.
+facilitate user-specific state management and
+persistence. [Click here](https://firebase.google.com/docs/flutter/setup) for more information on
+setting up Firebase.
+
+You need to setup your Firestore rules in such a way that each user can read from and write to their
+own collection:
 
 ``` rules_version = '2';    
-  
 service cloud.firestore {    
     match /databases/{database}/documents {    
         // Each user can read and write documents in their own collection.    
@@ -137,6 +141,11 @@ class CounterBloc extends FireBloc<CounterEvent, int> {
   @override Map<String, dynamic>? toJson(int state) => {'value': state};
 }  
 ```  
+
+Now the `CounterCubit` and `CounterBloc` will automatically persist/restore their state. We can  
+increment the counter value, hot restart, kill the app, etc... and the previous state will be  
+retained. We can also start the app on a different device or reinstall the app, and the state will  
+still be available.
 
   
 ---  
