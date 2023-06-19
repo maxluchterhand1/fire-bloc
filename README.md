@@ -166,3 +166,41 @@ class CounterBloc extends FireBloc<CounterEvent, int> {
   Map<String, dynamic>? toJson(int state) => {'value': state};
 }
 ```
+
+Now the `CounterCubit` and `CounterBloc` will automatically persist/restore their state. We can
+increment the counter value, hot restart, kill the app, etc... and the previous state will be
+retained. We can also start the app on a different device or reinstall the app, and the state will
+still be available.
+
+The mediation between the remote storage and the local storage performed by the default
+repository `EvaporatedRepository` looks something like this:
+
+As long as calls to the remote storage don't return `Failure`:
+
+* `EvaporatedRepository.write` writes to both local storage and remote storage
+* `EvaporatedRepository.delete` deletes from both local storage and remote storage
+* `EvaporatedRepository.clear` clears both local storage and remote storage
+* `EvaporatedRepository.read` reads from remote storage
+
+When any function call of the remote storage returns `Failure`, the repository switches into the
+status `EvaporatedRepositoryStatus.syncRequired`. The repository will stay in this status until the
+next application start. While in this status:
+
+* `EvaporatedRepository.write` writes to local storage
+* `EvaporatedRepository.delete` deletes from local storage
+* `EvaporatedRepository.clear` clears local storage
+* `EvaporatedRepository.read` reads from local storage
+
+The status of the repository is persisted in the local storage.
+When `EvaporatedRepository.initialize` is called (aka. on app start) and the repository's status
+is `EvaporatedRepositoryStatus.syncRequired`, all changes that have been made to the local storage
+during the last application runtime are pushed to the remote storage.
+
+## Dart Versions
+
+- Dart 3: >= 3.0.0
+
+## Maintainers
+
+- [Max Luchterhand](https://github.com/maxluchterhand1)
+- [Max Luchterhand](https://github.com/crazy-rodney1)
