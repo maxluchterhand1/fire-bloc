@@ -104,7 +104,8 @@ class CounterCubit extends FireCubit<int> {
   @override
   int? fromJson(Map<String, dynamic> json) =>
       switch (json['value']) {
-        final int value => value, _ => null
+        final int value => value,
+        _ => null
       };
 
   @override
@@ -139,7 +140,8 @@ class CounterBloc extends FireBloc<CounterEvent, int> {
   @override
   int? fromJson(Map<String, dynamic> json) =>
       switch (json['value']) {
-        final int value => value, _ => null
+        final int value => value,
+        _ => null
       };
 
   @override
