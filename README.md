@@ -74,6 +74,7 @@ Future<void> main() async {
   );
 
   final localStorage = HiveEvaporatedStorage.instance();
+
   EvaporatedRepository.instance = EvaporatedRepository(
     localStorage: localStorage,
     remoteStorage: remoteStorage,
@@ -100,12 +101,14 @@ class CounterCubit extends FireCubit<int> {
     }
   }
 
-  @override int? fromJson(Map<String, dynamic> json) =>
+  @override
+  int? fromJson(Map<String, dynamic> json) =>
       switch (json['value']) {
         final int value => value, _ => null
       };
 
-  @override Map<String, dynamic>? toJson(int state) => {'value': state};
+  @override
+  Map<String, dynamic>? toJson(int state) => {'value': state};
 }  
 ```  
 
@@ -133,12 +136,14 @@ class CounterBloc extends FireBloc<CounterEvent, int> {
     });
   }
 
-  @override int? fromJson(Map<String, dynamic> json) =>
+  @override
+  int? fromJson(Map<String, dynamic> json) =>
       switch (json['value']) {
         final int value => value, _ => null
       };
 
-  @override Map<String, dynamic>? toJson(int state) => {'value': state};
+  @override
+  Map<String, dynamic>? toJson(int state) => {'value': state};
 }  
 ```  
 
