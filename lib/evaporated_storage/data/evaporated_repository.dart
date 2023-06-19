@@ -29,16 +29,30 @@ class _EvaporatedRepositoryPendingReadAction
   final Completer<Result<Option<Map<String, dynamic>>, void>> completer;
 }
 
+/// Reflects the status of the repository.
 @visibleForTesting
 enum EvaporatedRepositoryStatus {
+  /// The repository has not yet been initialized and cannot be used.
   uninitialized('uninitialized'),
+
+  /// The repository is being initialized. Function calls are buffered until
+  /// the initialization is complete.
   pending('pending'),
+
+  /// The repository is functional. Read operations are forwarded to the remote
+  /// storage, write/delete/clear operations are performed on both the local
+  /// and the remote storage.
   allGood('allGood'),
+
+  /// The repository is functional. The remote storage has returned a Failure.
+  /// All operations are exclusively performed on the local storage. The next
+  /// time the repository initializes, the changes made to the local storage are
+  /// pushed to the remote storage.
   syncRequired('syncRequired');
 
-  const EvaporatedRepositoryStatus(this.stringValue);
+  const EvaporatedRepositoryStatus(this._stringValue);
 
-  final String stringValue;
+  final String _stringValue;
 }
 
 class EvaporatedRepository implements EvaporatedStorage {
@@ -99,7 +113,7 @@ class EvaporatedRepository implements EvaporatedStorage {
             if (statusString is! String) throw Exception();
 
             var status = EvaporatedRepositoryStatus.values
-                .firstWhereOrNull((e) => e.stringValue == statusString);
+                .firstWhereOrNull((e) => e._stringValue == statusString);
             if (status == null) throw Exception();
 
             if (status case EvaporatedRepositoryStatus.syncRequired) {
@@ -219,7 +233,7 @@ class EvaporatedRepository implements EvaporatedStorage {
   ) =>
       _localStorage.write(
         _evaporatedRepositoryLocalStorageKey,
-        {_evaporatedRepositoryStatusKey: status.stringValue},
+        {_evaporatedRepositoryStatusKey: status._stringValue},
       );
 
   @override
