@@ -107,10 +107,6 @@ mixin FireMixin<State> on BlocBase<Option<State>>
         return super.state;
       }
       final cachedState = fromJson(_stateJson!);
-      if (cachedState == null) {
-        _state = super.state;
-        return super.state;
-      }
       _state = cachedState;
       return cachedState;
     } catch (error, stackTrace) {
@@ -190,22 +186,4 @@ class FireUnsupportedError extends Error {
         : 'Converting object did not return an encodable object:';
     return '$prefix $safeString';
   }
-}
-
-class _NIL {
-  const _NIL();
-}
-
-enum _Outcome { atomic, complex }
-
-class _Traversed {
-  _Traversed._({required this.outcome, required this.value});
-
-  _Traversed.atomic(dynamic value)
-      : this._(outcome: _Outcome.atomic, value: value);
-
-  _Traversed.complex(dynamic value)
-      : this._(outcome: _Outcome.complex, value: value);
-  final _Outcome outcome;
-  final dynamic value;
 }
