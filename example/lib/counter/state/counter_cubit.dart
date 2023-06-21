@@ -12,11 +12,11 @@ class CounterCubit extends FireCubit<int> {
   }
 
   @override
-  int? fromJson(Map<String, dynamic> json) => switch (json['value']) {
-        final int value => value,
-        _ => null,
+  Option<int> fromJson(Map<String, dynamic> json) => switch (json['value']) {
+        final int value => Some(value),
+        _ => const None(),
       };
 
   @override
-  Map<String, dynamic>? toJson(int state) => {'value': state};
+  Map<String, dynamic> toJson(int state) => {'value': state};
 }

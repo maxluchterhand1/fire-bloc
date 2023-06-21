@@ -26,9 +26,9 @@ class FormBloc extends FireBloc<FormEvent, FormBlocState> {
   }
 
   @override
-  FormBlocState? fromJson(Map<String, dynamic> json) =>
-      FormBlocState.fromJson(json);
+  Some<FormBlocState> fromJson(Map<String, dynamic> json) =>
+      Some(FormBlocState.fromJson(json));
 
   @override
-  Map<String, dynamic>? toJson(FormBlocState state) => state.toJson();
+  Map<String, dynamic> toJson(FormBlocState state) => state.toJson();
 }
