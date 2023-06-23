@@ -7,8 +7,8 @@ part 'form_event.dart';
 part 'form_state.dart';
 
 class FormBloc extends FireBloc<FormEvent, FormBlocState> {
-  FormBloc() : super(Some(FormBlocState.empty)) {
-    fireOn<FormEvent>((event, fireEmit) {
+  FormBloc() : super(FormBlocState.empty) {
+    fireOn((event, fireEmit) {
       switch (state) {
         case Some(value: final innerState):
           switch (event) {

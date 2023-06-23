@@ -1,7 +1,7 @@
 import 'package:fire_bloc/fire_bloc.dart';
 
 class CounterCubit extends FireCubit<int> {
-  CounterCubit() : super(const Some(0));
+  CounterCubit() : super(0);
 
   void increment() {
     switch (state) {
